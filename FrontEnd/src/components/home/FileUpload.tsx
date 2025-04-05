@@ -26,7 +26,7 @@ export const FileUpload = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!rfpFile) {
@@ -37,19 +37,45 @@ export const FileUpload = () => {
       });
       return;
     }
-
-    // Simulate file upload and processing
+  
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    
+    // Create form data for file upload
+    const formData = new FormData();
+    formData.append("rfp_file", rfpFile);
+    
+    if (companyData) {
+      formData.append("company_data", companyData);
+    }
+    
+    try {
+      const response = await fetch("http://localhost:8000/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+      
+      const result = await response.json();
+      
       toast({
-        title: "Analysis Started",
+        title: "Files Uploaded Successfully",
         description: "Your RFP is being analyzed. You'll be redirected shortly.",
       });
       
-      // Redirect to analysis page
-      setTimeout(() => navigate("/analysis"), 1500);
-    }, 2000);
+      // Redirect to analysis page with the rfp_id
+      setTimeout(() => navigate(`/analysis?rfp_id=${result.rfp_id}`), 1500);
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
